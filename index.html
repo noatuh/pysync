@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Backup Utility - Web Interface</title>
+  <style>
+    body { font-family: sans-serif; margin: 2rem; }
+    input[type="text"] { width: 300px; }
+    button { margin-left: 0.5rem; }
+    ul { list-style: none; padding: 0; }
+    li { margin: 0.5rem 0; }
+  </style>
+</head>
+<body>
+  <h1>Backup Utility</h1>
+  <div>
+    <div style="margin-bottom: 0.5rem;">
+      <input id="src" type="text" placeholder="Source folder path">
+      <button onclick="browse('src')">Browse…</button>
+    </div>
+    <div style="margin-bottom: 1rem;">
+      <input id="dst" type="text" placeholder="Destination folder path">
+      <button onclick="browse('dst')">Browse…</button>
+    </div>
+    <button onclick="addPair()">Add Pair</button>
+    <button onclick="startBackup()">Start Backup</button>
+  </div>
+
+  <h2>Current Pairs</h2>
+  <ul id="pairs-list"></ul>
+
+  <script>
+    async function fetchPairs() {
+      const res = await fetch('/api/pairs');
+      const pairs = await res.json();
+      const list = document.getElementById('pairs-list');
+      list.innerHTML = '';
+      pairs.forEach((pair, i) => {
+        const li = document.createElement('li');
+        li.textContent = pair.src + ' → ' + pair.dst;
+        const btn = document.createElement('button');
+        btn.textContent = 'Remove';
+        btn.onclick = () => removePair(i);
+        li.appendChild(btn);
+        list.appendChild(li);
+      });
+    }
+
+    async function browse(fieldId) {
+      const res = await fetch('/api/browse');
+      const data = await res.json();
+      if (data.path) {
+        document.getElementById(fieldId).value = data.path;
+      }
+    }
+
+    async function addPair() {
+      const src = document.getElementById('src').value;
+      const dst = document.getElementById('dst').value;
+      if (!src || !dst) return alert('Both paths required');
+      await fetch('/api/pairs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ src, dst })
+      });
+      document.getElementById('src').value = '';
+      document.getElementById('dst').value = '';
+      fetchPairs();
+    }
+
+    async function removePair(idx) {
+      await fetch('/api/pairs/' + idx, { method: 'DELETE' });
+      fetchPairs();
+    }
+
+    async function startBackup() {
+      const res = await fetch('/api/backup', { method: 'POST' });
+      const data = await res.json();
+      alert(data.status || data.error);
+    }
+
+    window.onload = fetchPairs;
+  </script>
+</body>
+</html>

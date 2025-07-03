@@ -1,9 +1,15 @@
+#!/usr/bin/env python3
+# pysync_web.py — original GUI + Flask + directory‐browse endpoint
+
 import os
+import threading
+import subprocess
 import tkinter as tk
 from tkinter import filedialog, messagebox
-from threading import Thread
-import subprocess
 
+from flask import Flask, jsonify, request, send_file
+
+# --- Original BackupApp class, unchanged except making .run_backup public
 class BackupApp:
     def __init__(self, root):
         self.root = root
@@ -49,23 +55,68 @@ class BackupApp:
         if not self.pairs:
             messagebox.showerror("Error", "Please add at least one source-destination pair.")
             return
-        Thread(target=self.run_backup).start()
+        threading.Thread(target=self.run_backup).start()
 
     def run_backup(self):
         for src, dst in self.pairs:
             src_clean = src.rstrip("/\\")
             src_name = os.path.basename(src_clean)
-            # Mirror into a subfolder of dst, preserving name
             target = os.path.join(dst, src_name)
             cmd = ["robocopy", src, target, "/MIR", "/Z", "/W:1", "/R:2", "/XA:SH", "/XJ"]
             subprocess.run(cmd, shell=True)
-            
-            # Remove hidden and system attributes from destination directory
-            attrib_cmd = ["attrib", "-h", "-s", target]
-            subprocess.run(attrib_cmd, shell=True)
+            subprocess.run(["attrib", "-h", "-s", target], shell=True)
         messagebox.showinfo("Backup Completed", "All backups finished.")
 
-if __name__ == "__main__":
+# --- Flask web interface
+app = Flask(__name__, static_folder='.', static_url_path='')
+
+@app.route('/')
+def serve_index():
+    return send_file('index.html')
+
+@app.route('/api/pairs', methods=['GET', 'POST'])
+def api_pairs():
+    if request.method == 'GET':
+        return jsonify([{'src': s, 'dst': d} for s, d in backup_app.pairs])
+    data = request.get_json() or {}
+    src, dst = data.get('src'), data.get('dst')
+    if not src or not dst:
+        return jsonify({'error': 'src and dst required'}), 400
+    backup_app.pairs.append((src, dst))
+    return jsonify({'status': 'ok'})
+
+@app.route('/api/pairs/<int:idx>', methods=['DELETE'])
+def api_remove_pair(idx):
+    if 0 <= idx < len(backup_app.pairs):
+        backup_app.pairs.pop(idx)
+        return jsonify({'status': 'ok'})
+    return jsonify({'error': 'invalid index'}), 404
+
+@app.route('/api/backup', methods=['POST'])
+def api_start_backup():
+    if not backup_app.pairs:
+        return jsonify({'error': 'no pairs to back up'}), 400
+    threading.Thread(target=backup_app.run_backup).start()
+    return jsonify({'status': 'backup started'})
+
+# --- New: directory‐browse endpoint
+@app.route('/api/browse', methods=['GET'])
+def api_browse():
+    # pop up a native folder chooser, return the path chosen
+    chooser = tk.Tk()
+    chooser.withdraw()
+    path = filedialog.askdirectory(title="Select Folder")
+    chooser.destroy()
+    if not path:
+        return jsonify({'path': None})
+    return jsonify({'path': path})
+
+def run_flask():
+    app.run(host='127.0.0.1', port=5000, threaded=True)
+
+if __name__ == '__main__':
     root = tk.Tk()
-    app = BackupApp(root)
+    backup_app = BackupApp(root)
+    threading.Thread(target=run_flask, daemon=True).start()
+    print("Web interface at http://127.0.0.1:5000")
     root.mainloop()

@@ -4,26 +4,130 @@
   <meta charset="UTF-8">
   <title>Backup Utility - Web Interface</title>
   <style>
-    body { font-family: sans-serif; margin: 2rem; }
-    input[type="text"] { width: 300px; }
-    button { margin-left: 0.5rem; }
-    ul { list-style: none; padding: 0; }
-    li { margin: 0.5rem 0; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      margin: 2rem;
+      background: #f6f8fa;
+      color: #222;
+    }
+    h1 {
+      font-size: 2.2rem;
+      margin-bottom: 1.2rem;
+      color: #2d5be3;
+      letter-spacing: 1px;
+    }
+    h2 {
+      margin-top: 2.5rem;
+      color: #444;
+      font-size: 1.3rem;
+      letter-spacing: 0.5px;
+    }
+    .container {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(44,62,80,0.08);
+      padding: 2rem 2.5rem 1.5rem 2.5rem;
+      max-width: 480px;
+      margin-bottom: 2rem;
+    }
+    .input-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    input[type="text"] {
+      flex: 1;
+      padding: 0.6rem 1rem;
+      border: 1px solid #cfd8dc;
+      border-radius: 6px;
+      font-size: 1rem;
+      background: #f9fbfc;
+      transition: border 0.2s;
+      box-shadow: 0 1px 2px rgba(44,62,80,0.03);
+    }
+    input[type="text"]:focus {
+      border: 1.5px solid #2d5be3;
+      outline: none;
+      background: #fff;
+    }
+    button {
+      margin-left: 0.7rem;
+      padding: 0.55rem 1.2rem;
+      border: none;
+      border-radius: 6px;
+      background: linear-gradient(90deg, #2d5be3 60%, #4f8cff 100%);
+      color: #fff;
+      font-weight: 500;
+      font-size: 1rem;
+      cursor: pointer;
+      box-shadow: 0 1px 4px rgba(44,62,80,0.07);
+      transition: background 0.2s, box-shadow 0.2s;
+    }
+    button:hover {
+      background: linear-gradient(90deg, #1a3fa0 60%, #3576d1 100%);
+      box-shadow: 0 2px 8px rgba(44,62,80,0.12);
+    }
+    .action-btns {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      max-width: 480px;
+    }
+    li {
+      background: #fff;
+      border-radius: 7px;
+      box-shadow: 0 1px 4px rgba(44,62,80,0.06);
+      margin: 0.5rem 0;
+      padding: 0.7rem 1.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 1.05rem;
+    }
+    li button {
+      background: #e74c3c;
+      background: linear-gradient(90deg, #e74c3c 60%, #ff7675 100%);
+      color: #fff;
+      font-size: 0.95rem;
+      padding: 0.4rem 1rem;
+      margin-left: 1.2rem;
+      border-radius: 5px;
+      box-shadow: none;
+    }
+    li button:hover {
+      background: linear-gradient(90deg, #c0392b 60%, #ff7675 100%);
+    }
+    @media (max-width: 600px) {
+      .container, ul {
+        max-width: 98vw;
+        padding: 1rem;
+      }
+      body {
+        margin: 0.5rem;
+      }
+    }
   </style>
 </head>
 <body>
   <h1>Backup Utility</h1>
-  <div>
-    <div style="margin-bottom: 0.5rem;">
+  <div class="container">
+    <div class="input-row">
       <input id="src" type="text" placeholder="Source folder path">
       <button onclick="browse('src')">Browse…</button>
     </div>
-    <div style="margin-bottom: 1rem;">
+    <div class="input-row">
       <input id="dst" type="text" placeholder="Destination folder path">
       <button onclick="browse('dst')">Browse…</button>
     </div>
-    <button onclick="addPair()">Add Pair</button>
-    <button onclick="startBackup()">Start Backup</button>
+    <div class="action-btns">
+      <button onclick="addPair()">Add Pair</button>
+      <button onclick="startBackup()">Start Backup</button>
+    </div>
   </div>
 
   <h2>Current Pairs</h2>

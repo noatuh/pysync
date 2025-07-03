@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
-# pysync_web.py — original GUI + Flask + directory‐browse endpoint
+# pysync_web.py — original GUI + Flask + directory‐browse endpoint + “Open Web UI” button
 
 import os
 import threading
 import subprocess
+import webbrowser
 import tkinter as tk
 from tkinter import filedialog, messagebox
 
 from flask import Flask, jsonify, request, send_file
 
-# --- Original BackupApp class, unchanged except making .run_backup public
+# --- Original BackupApp class, unchanged except for adding open_web_ui
 class BackupApp:
     def __init__(self, root):
         self.root = root
@@ -29,6 +30,10 @@ class BackupApp:
 
         remove_pair_btn = tk.Button(btn_frame, text="Remove Selected Pair", command=self.remove_selected_pair)
         remove_pair_btn.grid(row=0, column=1, padx=5)
+
+        # New button to open the web interface
+        open_web_btn = tk.Button(btn_frame, text="Open Web UI", command=self.open_web_ui)
+        open_web_btn.grid(row=0, column=2, padx=5)
 
         start_btn = tk.Button(root, text="Start Backup", command=self.start_backup)
         start_btn.pack(pady=10)
@@ -67,6 +72,13 @@ class BackupApp:
             subprocess.run(["attrib", "-h", "-s", target], shell=True)
         messagebox.showinfo("Backup Completed", "All backups finished.")
 
+    def open_web_ui(self):
+        url = "http://127.0.0.1:5000"
+        try:
+            webbrowser.open(url)
+        except Exception as e:
+            messagebox.showerror("Error", f"Could not open browser: {e}")
+
 # --- Flask web interface
 app = Flask(__name__, static_folder='.', static_url_path='')
 
@@ -99,17 +111,13 @@ def api_start_backup():
     threading.Thread(target=backup_app.run_backup).start()
     return jsonify({'status': 'backup started'})
 
-# --- New: directory‐browse endpoint
 @app.route('/api/browse', methods=['GET'])
 def api_browse():
-    # pop up a native folder chooser, return the path chosen
     chooser = tk.Tk()
     chooser.withdraw()
     path = filedialog.askdirectory(title="Select Folder")
     chooser.destroy()
-    if not path:
-        return jsonify({'path': None})
-    return jsonify({'path': path})
+    return jsonify({'path': path or None})
 
 def run_flask():
     app.run(host='127.0.0.1', port=5000, threaded=True)
